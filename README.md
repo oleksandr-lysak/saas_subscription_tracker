@@ -10,7 +10,7 @@ This application allows you to manage SaaS subscriptions, calculate expenses con
 
 1. **Clone the repository:**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/oleksandr-lysak/saas_subscription_tracker.git
    cd saas_subscription_tracker
    ```
 2. **Start Docker containers:**
