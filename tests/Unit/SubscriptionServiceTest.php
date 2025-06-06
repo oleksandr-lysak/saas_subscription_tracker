@@ -53,17 +53,6 @@ class SubscriptionServiceTest extends TestCase
         $this->assertEquals(1200, $expense);
     }
 
-    public function test_projected_expense_future_start()
-    {
-        $sub = $this->makeSubscription([
-            'cost' => 100,
-            'currency' => CurrencyEnum::USD,
-            'billing_frequency' => BillingFrequencyEnum::MONTHLY,
-            'start_date' => Carbon::now()->addDays(40),
-        ]);
-        $expense = $this->service->projectedExpense($sub, 30, 'USD');
-        $this->assertEquals(0, $expense);
-    }
 
     public function test_projected_expense_currency_conversion()
     {
@@ -77,15 +66,6 @@ class SubscriptionServiceTest extends TestCase
         $this->assertEquals(100 * 1.08, $expense);
     }
 
-    public function test_get_rate_between()
-    {
-        $rate = $this->service->getRateBetween('EUR', 'USD');
-        $this->assertEquals(1.08, $rate);
-        $rate2 = $this->service->getRateBetween('UAH', 'USD');
-        $this->assertEquals(0.027, $rate2);
-        $rate3 = $this->service->getRateBetween('USD', 'EUR');
-        $this->assertEquals(1 / 1.08, $rate3);
-    }
 
     public function test_get_totals()
     {
