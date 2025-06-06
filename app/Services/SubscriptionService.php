@@ -123,11 +123,14 @@ class SubscriptionService
         }
         $periodStart = $start->gt($now) ? $start->copy() : $now->copy();
         $periodEnd = $windowEnd;
+        if ($periodStart->gt($periodEnd)) {
+            return 0;
+        }
         $freq = is_object($subscription->billing_frequency)
             ? $subscription->billing_frequency
             : BillingFrequencyEnum::tryFrom($subscription->billing_frequency);
         $interval = $freq ? $freq->intervalDays() : 30;
-        $activeDays = $periodEnd->diffInDays($periodStart) + 1;
+        $activeDays = $periodStart->diffInDays($periodEnd) + 1;
         $periods = $activeDays / $interval;
         return $cost * $periods;
     }
