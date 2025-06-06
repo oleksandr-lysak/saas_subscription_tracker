@@ -17,20 +17,24 @@ This application allows you to manage SaaS subscriptions, calculate expenses con
    ```bash
    docker-compose up -d
    ```
-3. **Install dependencies:**
+3. **Create .env**
+   ```bash
+   cp .env.example .env
+   ```
+4. **Install dependencies:**
    ```bash
    docker-compose exec app composer install
    docker-compose exec app npm install
    ```
-4. **Run migrations:**
+5. **Run migrations:**
    ```bash
    docker-compose exec app php artisan migrate
    ```
-5. **Start frontend (Vite):**
+6. **Start frontend (Vite):**
    ```bash
    docker-compose exec app npm run dev
    ```
-6. **Open in browser:**
+7. **Open in browser:**
    - http://localhost:8080
 
 ---
