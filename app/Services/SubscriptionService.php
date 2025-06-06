@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\CurrencyEnum;
+use App\BillingFrequencyEnum;
+use App\Http\Resources\SubscriptionResource;
 use App\Models\Subscription;
 use Illuminate\Support\Collection;
 
@@ -26,10 +29,9 @@ class SubscriptionService
                 $query->where('cost', '<=', $max);
             }
         } else {
-            $baseCurrency = $filters['base_currency'] ?? 'USD';
             if ($min !== null || $max !== null) {
                 $query->where(function ($q) use ($min, $max) {
-                    foreach (\App\CurrencyEnum::cases() as $currency) {
+                    foreach (CurrencyEnum::cases() as $currency) {
                         $rate = $currency->rateToUsd();
                         $q->orWhere(function ($subQ) use ($currency, $rate, $min, $max) {
                             $subQ->where('currency', $currency->value);
@@ -54,8 +56,8 @@ class SubscriptionService
 
     public function getRateBetween(string $from, string $to): float
     {
-        $fromEnum = \App\CurrencyEnum::tryFrom($from);
-        $toEnum = \App\CurrencyEnum::tryFrom($to);
+        $fromEnum = CurrencyEnum::tryFrom($from);
+        $toEnum = CurrencyEnum::tryFrom($to);
         if (! $fromEnum || ! $toEnum) {
             return 1.0;
         }
@@ -115,17 +117,19 @@ class SubscriptionService
         $cost = $subscription->cost * $rate;
         $start = $subscription->start_date;
         $now = now();
-        if ($start->gt($now->copy()->addDays($days))) {
+        $windowEnd = $now->copy()->addDays($days);
+        if ($start->gt($windowEnd)) {
             return 0;
         }
-
+        $periodStart = $start->gt($now) ? $start->copy() : $now->copy();
+        $periodEnd = $windowEnd;
         $freq = is_object($subscription->billing_frequency)
             ? $subscription->billing_frequency
-            : \App\BillingFrequencyEnum::tryFrom($subscription->billing_frequency);
+            : BillingFrequencyEnum::tryFrom($subscription->billing_frequency);
         $interval = $freq ? $freq->intervalDays() : 30;
-        $count = intdiv($days, $interval);
-
-        return $cost * $count;
+        $activeDays = $periodEnd->diffInDays($periodStart) + 1;
+        $periods = $activeDays / $interval;
+        return $cost * $periods;
     }
 
     public function getIndexData(array $filters): array
@@ -136,13 +140,13 @@ class SubscriptionService
         $grouped = $this->getGrouped($subscriptions, $baseCurrency);
         $currencySummary = $this->getCurrencySummary($subscriptions);
         $totals = $this->getTotals($subscriptions, $baseCurrency);
-        $currencies = array_map(fn ($c) => ['value' => $c->value, 'label' => $c->value], \App\CurrencyEnum::cases());
-        $frequencies = array_map(fn ($f) => ['value' => $f->value, 'label' => ucfirst($f->value)], \App\BillingFrequencyEnum::cases());
+        $currencies = array_map(fn ($c) => ['value' => $c->value, 'label' => $c->value], CurrencyEnum::cases());
+        $frequencies = array_map(fn ($f) => ['value' => $f->value, 'label' => ucfirst($f->value)], BillingFrequencyEnum::cases());
 
         return [
-            'subscriptions' => \App\Http\Resources\SubscriptionResource::collection($subscriptions),
+            'subscriptions' => SubscriptionResource::collection($subscriptions),
             'filters' => $filters,
-            'top' => \App\Http\Resources\SubscriptionResource::collection($top),
+            'top' => SubscriptionResource::collection($top),
             'grouped' => $grouped,
             'currencySummary' => $currencySummary,
             'total30' => $totals['total30'],
@@ -154,8 +158,8 @@ class SubscriptionService
 
     public function getCreateData(): array
     {
-        $currencies = array_map(fn ($c) => ['value' => $c->value, 'label' => $c->value], \App\CurrencyEnum::cases());
-        $frequencies = array_map(fn ($f) => ['value' => $f->value, 'label' => ucfirst($f->value)], \App\BillingFrequencyEnum::cases());
+        $currencies = array_map(fn ($c) => ['value' => $c->value, 'label' => $c->value], CurrencyEnum::cases());
+        $frequencies = array_map(fn ($f) => ['value' => $f->value, 'label' => ucfirst($f->value)], BillingFrequencyEnum::cases());
 
         return [
             'currencies' => $currencies,
@@ -163,13 +167,13 @@ class SubscriptionService
         ];
     }
 
-    public function getEditData(\App\Models\Subscription $subscription): array
+    public function getEditData(Subscription $subscription): array
     {
-        $currencies = array_map(fn ($c) => ['value' => $c->value, 'label' => $c->value], \App\CurrencyEnum::cases());
-        $frequencies = array_map(fn ($f) => ['value' => $f->value, 'label' => ucfirst($f->value)], \App\BillingFrequencyEnum::cases());
+        $currencies = array_map(fn ($c) => ['value' => $c->value, 'label' => $c->value], CurrencyEnum::cases());
+        $frequencies = array_map(fn ($f) => ['value' => $f->value, 'label' => ucfirst($f->value)], BillingFrequencyEnum::cases());
 
         return [
-            'subscription' => new \App\Http\Resources\SubscriptionResource($subscription),
+            'subscription' => new SubscriptionResource($subscription),
             'currencies' => $currencies,
             'frequencies' => $frequencies,
         ];

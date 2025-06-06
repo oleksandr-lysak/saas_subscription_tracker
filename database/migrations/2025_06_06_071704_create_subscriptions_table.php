@@ -15,11 +15,14 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->decimal('cost', 10, 2);
-            $table->string('billing_frequency'); // monthly, yearly, weekly, etc.
-            $table->string('currency'); // enum CurrencyEnum
+            $table->string('billing_frequency');
+            $table->string('currency');
             $table->date('start_date');
             $table->text('description')->nullable();
             $table->timestamps();
+            $table->index('currency');
+            $table->index('billing_frequency');
+            $table->index('start_date');
         });
     }
 
